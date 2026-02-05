@@ -1,5 +1,6 @@
 import { WebSocket, WebSocketServer } from "ws";
 import { Server } from "http";
+import { wsArcjet } from "../arcjet";
 
 function sendJson(ws: WebSocket, payload: unknown): void {
   if (ws.readyState !== WebSocket.OPEN) {
@@ -27,7 +28,50 @@ export function attatchWebSocketServer(server: Server): {
     maxPayload: 1024 * 1024,
   });
 
-  wss.on("connection", (ws) => {
+  server.on("upgrade", async (req, socket, head) => {
+    if (wsArcjet) {
+      try {
+        const decision = await wsArcjet.protect(req);
+
+        if (decision.isDenied()) {
+          const isRateLimit = decision.reason.isRateLimit();
+          const statusCode = isRateLimit ? 429 : 403;
+          const statusText = isRateLimit
+            ? "Too Many Requests"
+            : "Access Denied";
+
+          socket.write(
+            `HTTP/1.1 ${statusCode} ${statusText}\r\n` +
+              "Connection: close\r\n" +
+              "Content-Type: text/plain\r\n" +
+              `Content-Length: ${Buffer.byteLength(statusText)}\r\n` +
+              "\r\n" +
+              statusText,
+          );
+          socket.destroy();
+          return;
+        }
+      } catch (error) {
+        console.error("Arcjet WebSocket protection error:", error);
+        socket.write(
+          "HTTP/1.1 503 Service Unavailable\r\n" +
+            "Connection: close\r\n" +
+            "Content-Type: text/plain\r\n" +
+            "Content-Length: 21\r\n" +
+            "\r\n" +
+            "Service Unavailable",
+        );
+        socket.destroy();
+        return;
+      }
+    }
+
+    wss.handleUpgrade(req, socket, head, (ws) => {
+      wss.emit("connection", ws, req);
+    });
+  });
+
+  wss.on("connection", async (ws, req) => {
     ws.isAlive = true;
 
     ws.on("pong", () => {
