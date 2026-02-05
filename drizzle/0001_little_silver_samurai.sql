@@ -1,0 +1,1 @@
+ALTER TABLE "commentary" ALTER COLUMN "event_type" DROP NOT NULL;

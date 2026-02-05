@@ -38,7 +38,7 @@ export const commentary = pgTable("commentary", {
   minute: integer("minute"),
   sequence: integer("sequence"),
   period: text("period"),
-  eventType: text("event_type").notNull(),
+  eventType: text("event_type"),
   actor: text("actor"),
   team: text("team"),
   message: text("message").notNull(),

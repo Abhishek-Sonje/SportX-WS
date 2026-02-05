@@ -8,6 +8,13 @@
       "when": 1770197588592,
       "tag": "0000_chunky_black_bolt",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1770327635280,
+      "tag": "0001_little_silver_samurai",
+      "breakpoints": true
     }
   ]
 }
